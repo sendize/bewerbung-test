@@ -9,6 +9,7 @@ This repository contains a take-home assignment solution for detecting changes b
 - `solution/test_detect_changes.py` — unit tests for minor changes, renumbering, and full diff behavior.
 - `output/changes.json` — generated structured diff committed for review.
 - `DESIGN.md` — Part 2 relevance-mapping design.
+- `ADDONS.md` — Part 3 add-on features and deep dive.
 - `INSTRUCTIONS.md` — original English assignment instructions.
 
 ## Run The Detector
