@@ -1,9 +1,24 @@
-import json
 import os
+import sys
 import tempfile
 import unittest
+from datetime import date
 
-from detect_changes import detect_changes, detect_renumberings, is_minor_change
+sys.path.insert(0, os.path.dirname(__file__))
+
+from changes_detector import detect_changes, detect_renumberings, is_minor_change
+from regulation import Regulation
+
+
+def regulation(law, paragraph, title, text_hash):
+    return Regulation(
+        gesetz=law,
+        paragraph=paragraph,
+        titel=title,
+        text_hash=text_hash,
+        status="in_force",
+        gueltig_ab=date(2020, 1, 1),
+    )
 
 
 class TestMinorChangeDetection(unittest.TestCase):
@@ -20,24 +35,35 @@ class TestMinorChangeDetection(unittest.TestCase):
 
 class TestRenumberingDetection(unittest.TestCase):
     def test_same_hash_detects_renumbering(self):
-        removed = [{"gesetz": "ABC", "paragraph": "§1", "titel": "Foo", "text_hash": "h1"}]
-        added = [{"gesetz": "ABC", "paragraph": "§1a", "titel": "Foo", "text_hash": "h1"}]
+        removed = [regulation("ABC", "§1", "Foo", "h1")]
+        added = [regulation("ABC", "§1a", "Foo", "h1")]
         renumberings, rem_r, rem_a = detect_renumberings(removed, added)
         self.assertEqual(len(renumberings), 1)
         self.assertEqual(len(rem_r), 0)
         self.assertEqual(len(rem_a), 0)
 
     def test_similar_title_detects_renumbering(self):
-        removed = [{"gesetz": "ABC", "paragraph": "§15", "titel": "Anzeige bei Änderungen", "text_hash": "h1"}]
-        added = [{"gesetz": "ABC", "paragraph": "§15a", "titel": "Anzeige bei Änderungen", "text_hash": "h2"}]
+        removed = [regulation("ABC", "§15", "Anzeige bei Änderungen", "h1")]
+        added = [regulation("ABC", "§15a", "Anzeige bei Änderungen", "h2")]
         renumberings, rem_r, rem_a = detect_renumberings(removed, added)
         self.assertEqual(len(renumberings), 1)
 
     def test_different_laws_not_matched(self):
-        removed = [{"gesetz": "ABC", "paragraph": "§1", "titel": "Foo", "text_hash": "h1"}]
-        added = [{"gesetz": "XYZ", "paragraph": "§2", "titel": "Foo", "text_hash": "h1"}]
+        removed = [regulation("ABC", "§1", "Foo", "h1")]
+        added = [regulation("XYZ", "§2", "Foo", "h1")]
         renumberings, rem_r, rem_a = detect_renumberings(removed, added)
         self.assertEqual(len(renumberings), 0)
+
+    def test_added_paragraph_is_only_matched_once(self):
+        removed = [
+            regulation("ABC", "§1", "Anzeige bei Änderungen", "h1"),
+            regulation("ABC", "§2", "Anzeige bei Änderungen", "h2"),
+        ]
+        added = [regulation("ABC", "§1a", "Anzeige bei Änderungen", "h3")]
+        renumberings, rem_r, rem_a = detect_renumberings(removed, added)
+        self.assertEqual(len(renumberings), 1)
+        self.assertEqual(len(rem_r), 1)
+        self.assertEqual(len(rem_a), 0)
 
 
 class TestFullDiff(unittest.TestCase):
@@ -69,6 +95,7 @@ class TestFullDiff(unittest.TestCase):
 
             changes = detect_changes(old_p, new_p)
             types = {c["type"] for c in changes}
+            self.assertLessEqual(types, {"NEW", "REPEALED", "MODIFIED", "RENUMBERED"})
             self.assertIn("MODIFIED", types)
             self.assertIn("REPEALED", types)
             self.assertIn("RENUMBERED", types)
@@ -93,6 +120,7 @@ class TestFullDiff(unittest.TestCase):
             ])
 
             changes = detect_changes(old_p, new_p)
+            self.assertNotIn("MINOR_CHANGE", {c["type"] for c in changes})
             sub = [c for c in changes if c.get("substantive")]
             minor = [c for c in changes if not c.get("substantive", True)]
             self.assertEqual(len(sub), 1)

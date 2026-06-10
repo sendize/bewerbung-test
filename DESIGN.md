@@ -9,17 +9,17 @@
 │    Customer     │       │  ApplicabilityRule   │       │   Regulation    │
 ├─────────────────┤       ├─────────────────────┤       ├─────────────────┤
 │ id (PK)         │◄──────│ regulation_key       │──────►│ key (PK)        │
-│ name            │  M:N  │ customer_attribute   │  1:N │ gesetz          │
-│ branche         │       │ attribute_operator    │      │ paragraph       │
-│ mitarbeiter     │       │ attribute_value       │      │ titel           │
-│ standort        │       │ threshold_value       │      │ status          │
+│ name            │  M:N  │ rule_type             │  1:N │ gesetz          │
+│ branche         │       │ conditions[]          │      │ paragraph       │
+│ mitarbeiter     │       │ logic                 │      │ titel           │
+│ standort        │       │ automation_policy     │      │ status          │
 │ anlagen[]       │       │ effective_from        │      │ text_hash       │
 │ gefahrstoffe[]  │       │ effective_to          │      │ kommentar       │
 │ wassernutzung   │       │ confidence            │      └─────────────────┘
-│ abfallarten[]   │       │ reviewed_by           │
-│ stoerfall_verord│       │ reviewed_at           │
-└─────────────────┘       │ review_status         │
-                          │ rule_type             │
+│ abfallarten[]   │       │ evidence_fields[]     │
+│ stoerfall_verord│       │ reviewed_by           │
+└─────────────────┘       │ reviewed_at           │
+                          │ review_status         │
                           └─────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────┐
@@ -31,7 +31,8 @@
 │ applicability_rule_id ──► ApplicabilityRule.id                  │
 │ confidence: HIGH | MEDIUM | LOW                                 │
 │ match_reason: text explanation                                  │
-│ review_status: AUTO_APPROVED | NEEDS_REVIEW | REJECTED          │
+│ review_status: AUTO_APPROVED | PENDING_REVIEW                 │
+│                APPROVED | DISMISSED                           │
 │ consultant_notes: free text                                     │
 │ reviewed_at: timestamp                                          │
 └──────────────────────────────────────────────────────────────────┘
@@ -46,13 +47,18 @@
 
 **Why rules, not tags:** Tagging every regulation with every affected customer is not scalable. Rules encode the *logic* ("applies to Anlagen ≥ 5 t/h classified as 3.1.1"), so new customers auto-match and new thresholds can be evaluated without manual re-tagging.
 
+**Customer properties as typed facts:** The raw customer profile should not be matched as free text only. Important properties are extracted into typed facts such as `anlagen_4_bimschv[].nummer`, `anlagen_4_bimschv[].kapazitaet_t_h`, `gefahrstoffe[].cmr_kategorie`, `wassernutzung.entnahme`, `wassernutzung.einleitung`, `abfallarten[]`, and `standort.schutzzone`. Each fact keeps a source pointer back to the customer profile so the UI can show evidence instead of just a score.
+
+**Versioned rules:** Applicability rules are versioned independently from regulations. A legal change can alter either the regulation text, the applicability threshold, or both. Keeping `effective_from`, `effective_to`, `review_status`, and `reviewed_by` on the rule lets consultants audit why a customer was matched at a given point in time.
+
 ### ApplicabilityRule Schema (Detailed)
 
 ```json
 {
   "rule_id": "AR-BImSchG-5-311",
-  "regulation_key": ["BImSchG", "§5"],
+  "regulation_key": { "law": "BImSchG", "paragraph": "§5" },
   "rule_type": "THRESHOLD",
+  "automation_policy": "AUTO_NOTIFY_WHEN_DETERMINISTIC",
   "conditions": [
     {
       "path": "anlagen_4_bimschv[].nummer",
@@ -67,7 +73,11 @@
   ],
   "logic": "AND",
   "effective_from": "2025-04-01",
-  "confidence": "HIGH"
+  "confidence": "HIGH",
+  "evidence_fields": [
+    "anlagen_4_bimschv[].nummer",
+    "anlagen_4_bimschv[].kapazitaet_t_h"
+  ]
 }
 ```
 
@@ -84,10 +94,10 @@
 | K-002 Logistik Schmidt | No | No 4.BImSchV Anlagen at all. |
 | K-003 Vetter Lebensmittel | No | Has Anlage 7.4 (Schlachtanlage), not 3.1.1. Different Anlage number → threshold change irrelevant. |
 | K-004 Bauunternehmen Klein | No | No 4.BImSchV Anlagen. |
-| **K-005 ChemPro Industries** | **MEDIUM — uncertain** | Has Anlagen 4.1.1 and 9.1.1, not 3.1.1. Directly: no. But §5 covers "Pflichten der Betreiber genehmigungsbedürftiger Anlagen" generally — the threshold change could indicate broader tightening of operator duties worth flagging for review. |
+| K-005 ChemPro Industries | No | Has Anlagen 4.1.1 and 9.1.1, not 3.1.1. The changed threshold is specific to 3.1.1 Eisenmetallgießerei, so they should not be matched. |
 | K-006 Stadtwerke Bernau | No | No 4.BImSchV Anlagen. |
 
-**False positive risk:** K-005 is a borderline case. Flagging a large chemical manufacturer for a threshold change that doesn't apply to their Anlage type wastes consultant time. Mitigation: rule-based matching only flags K-001; K-005 would only appear if a consultant manually broadens the search.
+**False positive risk:** The title of §5 is broad, but the actual change is a narrow threshold change for Anlage 3.1.1. Matching all operators of genehmigungsbedürftige Anlagen would over-alert K-003 and K-005. Mitigation: the rule is scoped to both `anlagen_4_bimschv[].nummer == "3.1.1"` and the new threshold. A consultant can still search all §5 customers manually, but the automated relevance pipeline should only flag K-001.
 
 ---
 
@@ -96,25 +106,25 @@
 
 | Customer | Affected? | Reasoning |
 |---|---|---|
-| All six customers | **No** | The `kommentar` field explicitly states no substantive change. System should auto-filter this out — no customer notification needed. |
+| All six customers | **No** | The change is emitted as `MODIFIED` with `substantive: false` because the comment indicates a typo/sprachliche Klarstellung. The relevance pipeline should auto-filter it out — no customer notification needed. |
 
-**Design note:** This is the "substantive vs minor" edge case. The system checks `_is_typo_only()` on the kommentar and skips matching entirely for `MINOR_CHANGE` types. The change is logged for audit but does not enter the relevance pipeline.
+**Design note:** This is the "substantive vs minor" edge case. The change still appears as `MODIFIED`, but `substantive: false` prevents it from entering the customer relevance pipeline. It is logged for audit only.
 
 ---
 
 ### Change 3: WHG §3 — REPEALED
-> Begriffsbestimmungen aufgehoben durch Artikel 4 des Gesetzes vom 18.02.2025; Begriffe nun im neuen Begriffskatalog des UmweltrahmenG.
+> Begriffsbestimmungen aufgehoben durch Artikel 4 des Gesetzes vom 18.02.2025.
 
 | Customer | Affected? | Reasoning |
 |---|---|---|
-| K-001 Müller | No | Has Industriewasser-Entnahme but WHG §3 was a definitions paragraph. Repeal of definitions is a structural change — impact depends on whether definitions changed substantively. |
+| **K-001 Müller** | **MEDIUM** | Has Industriewasser-Entnahme. WHG §3 was a definitions paragraph, so the repeal is structural, but definitions may still affect how water use and permits are interpreted. Consultant review should decide whether the definitions moved elsewhere or changed substantively. |
 | K-002 Logistik | No | No water operations. |
 | **K-003 Vetter Lebensmittel** | **MEDIUM** | Has "Abwasserdirekteinleitung in Vorfluter (genehmigt)". WHG definitions underpin their wastewater permit. If definitions changed, permit conditions may need reinterpretation. |
 | K-004 Bauunternehmen Klein | No | No water operations. |
 | **K-005 ChemPro Industries** | **MEDIUM** | Has "Grundwasser-Entnahme + Direkteinleitung von Prozessabwasser". Heavy water user — definitions affect groundwater classification and discharge limits. |
-| **K-006 Stadtwerke Bernau** | **HIGH** | Core business is Trinkwasser-Förderung from 4 Brunnen in Wasserschutzgebieten. WHG definitions are central to their entire compliance framework. Definitions moved to UmweltrahmenG — they need to know where to look now. |
+| **K-006 Stadtwerke Bernau** | **HIGH** | Core business is Trinkwasser-Förderung from 4 Brunnen in Wasserschutzgebieten. WHG definitions are central to their entire compliance framework. Even if the repeal only relocates definitions, they need to know which source is authoritative now. |
 
-**False negative risk:** If the definitions didn't actually change (just relocated), K-003 and K-005 might be over-alerted. Mitigation: the consultant review screen shows the old and new definition sources side by side so the consultant can quickly assess whether the move is purely structural or carries substantive changes.
+**Uncertainty:** The repeal itself is certain, but the business impact is uncertain because definition paragraphs often move rather than disappear. Pure relocation would make K-001/K-003/K-005 false positives; changed definitions would make missed water users false negatives. Mitigation: all water-use matches enter consultant review, sorted by exposure. K-006 is highest priority because water supply is its core business and the wells are in protection areas.
 
 ---
 
@@ -155,9 +165,9 @@
 ```
 Change                    K-001    K-002    K-003    K-004    K-005    K-006
 ────────────────────────────────────────────────────────────────────────────
-BImSchG §5 MODIFIED       HIGH       -        -        -     MED        -
-KrWG §7 MINOR              -         -        -        -      -         -
-WHG §3 REPEALED           -         -      MED        -     MED      HIGH
+BImSchG §5 MODIFIED       HIGH       -        -        -      -         -
+KrWG §7 MODIFIED minor     -         -        -        -      -         -
+WHG §3 REPEALED           MED        -      MED        -     MED      HIGH
 BImSchG §15→15a RENUM     HIGH       -     HIGH        -    HIGH        -
 GefStoffV §8a NEW         HIGH       -        -        -    HIGH        -
 ```
@@ -168,11 +178,11 @@ Three confidence tiers:
 
 | Tier | Behavior |
 |---|---|
-| **HIGH** | Auto-notify customer. No consultant review needed. |
-| **MEDIUM** | Enters consultant review queue. Must be approved or dismissed before customer notification. |
+| **HIGH** | Deterministic match. Auto-notify for direct operational changes; require review for structural changes such as repeals or moved definitions. |
+| **MEDIUM** | Plausible but uncertain match. Enters consultant review queue and must be approved or dismissed before customer notification. |
 | **LOW** | Logged for audit only. Consultant review optional. |
 
-**Balancing false positives vs false negatives:** The system errs toward false positives (over-notification) for HIGH-impact changes (NEW, MODIFIED-substantive). For structural changes (REPEALED definitions, RENUMBERED), it uses MEDIUM to trigger review. Minor changes (MINOR_CHANGE) are filtered out entirely — false negative risk is acceptable here because the content didn't change.
+**Balancing false positives vs false negatives:** The system is precise for narrow threshold changes to avoid noisy alerts (BImSchG §5 only matches Anlage 3.1.1). It is more conservative for structural legal changes where obligations may have moved rather than disappeared (WHG §3), because a missed water-law dependency could create compliance risk. Minor changes are filtered out entirely because the `substantive: false` flag and kommentar indicate no legal effect.
 
 ---
 
@@ -180,17 +190,16 @@ Three confidence tiers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│  ACURENTO COMPLIANCE PLATFORM  │  Consultant Review  │  🔔 3 pending items      │
+│  ACURENTO COMPLIANCE PLATFORM  │  Consultant Review  │  🔔 4 pending items      │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                │
 │  ┌─ Change Card ─────────────────────────────────────────────────────────────┐  │
 │  │  WHG §3 — Begriffsbestimmungen                                          │  │
 │  │  Type: REPEALED  │  Confidence: MEDIUM                                   │  │
-│  │  "Aufgehoben durch Artikel 4 des Gesetzes vom 18.02.2025; Begriffe      │  │
-│  │   nun im neuen Begriffskatalog des UmweltrahmenG"                        │  │
+│  │  "Aufgehoben durch Artikel 4 des Gesetzes vom 18.02.2025"                │  │
 │  └──────────────────────────────────────────────────────────────────────────┘  │
 │                                                                                │
-│  ── Affected Customers (2 pending) ──────────────────────────────────────────  │
+│  ── Affected Customers (4 pending) ──────────────────────────────────────────  │
 │                                                                                │
 │  ┌──────────────────────────────────────────────────────────────────────────┐  │
 │  │  K-006  Stadtwerke Bernau Wasserversorgung         [HIGH confidence]     │  │
@@ -207,6 +216,20 @@ Three confidence tiers:
 │  │  Rationale: Grundwasser-Entnahme + Direkteinleitung. Definitions          │  │
 │  │             may affect groundwater classification.                        │  │
 │  │                                                                          │  │
+│  │  [✓ Approve & Notify]   [✗ Dismiss]   [📝 Add Note]                     │  │
+│  └──────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                │
+│  ┌──────────────────────────────────────────────────────────────────────────┐  │
+│  │  K-003  Vetter Lebensmittel GmbH                     [MED confidence]    │  │
+│  │  Match rule: AR-WHG-water-ops (wassernutzung.einleitung == true)         │  │
+│  │  Rationale: Approved direct discharge into receiving water.               │  │
+│  │  [✓ Approve & Notify]   [✗ Dismiss]   [📝 Add Note]                     │  │
+│  └──────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                │
+│  ┌──────────────────────────────────────────────────────────────────────────┐  │
+│  │  K-001  Müller Eisengießerei                         [MED confidence]    │  │
+│  │  Match rule: AR-WHG-water-ops (wassernutzung.entnahme == true)           │  │
+│  │  Rationale: Industrial water withdrawal may reference WHG definitions.    │  │
 │  │  [✓ Approve & Notify]   [✗ Dismiss]   [📝 Add Note]                     │  │
 │  └──────────────────────────────────────────────────────────────────────────┘  │
 │                                                                                │
@@ -231,7 +254,7 @@ Three confidence tiers:
 
 ### What the Consultant Sees
 
-1. **Change card** at top — law, paragraph, type, confidence, reason text. Always visible.
+1. **Change card** at top — law, paragraph, type, confidence, reason text. Always visible. Structural changes are marked `review_required` even when one customer has HIGH confidence.
 2. **Customer match list** — each matched customer with confidence level, matching rule ID, and rationale.
 3. **Evidence panel** — expandable per customer. Shows the customer's relevant properties, the old and new regulation sources, and a diff link for side-by-side comparison.
 4. **Per-customer actions** — Approve (notify), Dismiss (skip), Add Note (attach context for future audits).
@@ -239,7 +262,7 @@ Three confidence tiers:
 
 ### What Helps the Consultant Decide Quickly
 
-- **Confidence color coding:** green (HIGH), yellow (MEDIUM), gray (LOW). At a glance, the consultant knows which items need attention.
+- **Confidence color coding:** green (HIGH), yellow (MEDIUM), gray (LOW), combined with a `review_required` badge. At a glance, the consultant sees both likelihood and whether manual approval is mandatory.
 - **Rule ID in match rationale:** every match traces back to a specific ApplicabilityRule. If a rule is producing too many false positives, the consultant can flag the rule itself for adjustment, not just the individual match.
 - **Side-by-side diff link:** for REPEALED/RENUMBERED changes where the content moved to a new source, the consultant can compare old vs new text without leaving the screen.
 - **Customer property highlight:** only the relevant properties are shown (e.g., `wassernutzung` for a WHG change), reducing cognitive load.
@@ -248,7 +271,7 @@ Three confidence tiers:
 
 | Action | Effect |
 |---|---|
-| **Approve & Notify** | Customer receives notification. Match is logged as AUTO_APPROVED → APPROVED. |
+| **Approve & Notify** | Customer receives notification. Match is logged as PENDING_REVIEW → APPROVED, or AUTO_APPROVED → APPROVED if it was deterministic and pre-approved. |
 | **Dismiss** | Customer is skipped. Reason must be provided if confidence was HIGH. |
 | **Add Note** | Free-text annotation attached to the match. Does not change status. |
 | **Escalate** | Flags the match for a senior consultant or domain expert. |
