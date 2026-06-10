@@ -1,0 +1,17 @@
+gesetz;paragraph;titel;text_hash;status;gueltig_ab;kommentar
+BImSchG;§1;Zweck des Gesetzes;a1f0c2d5;in_force;1990-03-15;
+BImSchG;§3;Begriffsbestimmungen;b3e7f912;in_force;2013-07-12;Letzte substantielle Änderung 2013
+BImSchG;§4;Genehmigungsbedürftige Anlagen;c4d8a103;in_force;2017-07-25;
+BImSchG;§5;Pflichten der Betreiber genehmigungsbedürftiger Anlagen;d5b9e7f4;in_force;2025-04-01;Schwellenwert für genehmigungsbedürftige Anlagen Nr. 3.1.1 (Eisenmetallgießerei) von 10 t/h auf 5 t/h gesenkt; Pflichten der Betreiber entsprechend angepasst
+BImSchG;§15a;Anzeige bei Änderungen;e6c0f7b1;in_force;2025-02-15;Aus §15 umnummeriert nach Einfügung eines neuen §15 (Datenübermittlung an Behörden) durch Änderungsgesetz vom 12.01.2025
+BImSchG;§17;Nachträgliche Anordnungen;f7d1a445;in_force;2013-07-08;
+KrWG;§3;Begriffsbestimmungen;a8e2b556;in_force;2020-10-23;
+KrWG;§6;Abfallhierarchie;b9f3c667;in_force;2012-02-24;
+KrWG;§7;Pflichten der Erzeuger und Besitzer von Abfällen;c0a4d9c2;in_force;2025-01-10;Sprachliche Klarstellung in Absatz 2 (Tippfehler-Korrektur); keine inhaltliche Änderung
+KrWG;§8;Rangfolge und Hochwertigkeit der Verwertungsmaßnahmen;d1b5e889;in_force;2020-10-23;
+GefStoffV;§6;Informationsermittlung und Gefährdungsbeurteilung;e2c6f99a;in_force;2010-11-26;
+GefStoffV;§7;Grundpflichten;f3d70aab;in_force;2010-11-26;
+GefStoffV;§8;Allgemeine Schutzmaßnahmen;a4e81bbc;in_force;2010-11-26;
+GefStoffV;§8a;Schutzmaßnahmen bei Tätigkeiten mit krebserzeugenden Stoffen der Kategorie 1A oder 1B;b5f92dee;in_force;2025-03-01;Neuer Paragraph zur Umsetzung EU-Richtlinie 2024/869; verschärfte Substitutions- und Schutzpflichten
+WHG;§3;Begriffsbestimmungen;b5f92ccd;aufgehoben;2009-07-31;Aufgehoben durch Artikel 4 des Gesetzes vom 18.02.2025; Begriffe nun im neuen Begriffskatalog des UmweltrahmenG (in Kraft 01.07.2025)
+WHG;§62;Anforderungen an den Umgang mit wassergefährdenden Stoffen;c6a03dde;in_force;2017-06-18;

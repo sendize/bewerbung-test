@@ -1,0 +1,115 @@
+{
+  "_kommentar": "Synthetische Kundenprofile für die Bewerbungsaufgabe. Felder, Branchen und Zahlen sind fiktiv, aber an realistische deutsche Industrie-Mandanten angelehnt. Heterogenität ist Absicht: jeder Kunde hat eine andere Mischung aus Anlagen, Gefahrstoffen, Wasser- und Abfallthemen.",
+  "kunden": [
+    {
+      "id": "K-001",
+      "name": "Müller Eisengießerei GmbH & Co. KG",
+      "branche": "Metallverarbeitung",
+      "mitarbeiter": 350,
+      "standort_bundesland": "Niedersachsen",
+      "anlagen_4_bimschv": [
+        {
+          "nummer": "3.1.1",
+          "bezeichnung": "Eisen-, Temper- und Stahlgießerei",
+          "kapazitaet_t_h": 8.0
+        }
+      ],
+      "gefahrstoffe": [
+        {"name": "Cadmium-Verbindungen", "cmr_kategorie": "1B"},
+        {"name": "Phenol", "cmr_kategorie": null},
+        {"name": "Formaldehyd", "cmr_kategorie": "1B"}
+      ],
+      "wassernutzung": "Industriewasser-Entnahme aus Oberflächengewässer",
+      "abfallarten_wesentlich": ["Gießereisand", "Schlacke", "cadmium-haltige Stäube"],
+      "stoerfall_verordnung": null
+    },
+    {
+      "id": "K-002",
+      "name": "Logistik Schmidt KG",
+      "branche": "Logistik / Transport",
+      "mitarbeiter": 50,
+      "standort_bundesland": "Bayern",
+      "anlagen_4_bimschv": [],
+      "gefahrstoffe": [
+        {"name": "Diesel-Kraftstoff (Lagerung 12.000 L oberirdisch)", "cmr_kategorie": "2"}
+      ],
+      "wassernutzung": null,
+      "abfallarten_wesentlich": ["Altöl", "Verpackungsabfälle", "Reifen"],
+      "stoerfall_verordnung": null
+    },
+    {
+      "id": "K-003",
+      "name": "Vetter Lebensmittelproduktion AG",
+      "branche": "Lebensmittelproduktion",
+      "mitarbeiter": 1200,
+      "standort_bundesland": "Nordrhein-Westfalen",
+      "anlagen_4_bimschv": [
+        {
+          "nummer": "7.4",
+          "bezeichnung": "Schlachtanlage und Fleischverarbeitung",
+          "kapazitaet_t_d": 200.0
+        }
+      ],
+      "gefahrstoffe": [
+        {"name": "Reinigungsmittel (alkalisch, NaOH-basiert)", "cmr_kategorie": null},
+        {"name": "Ammoniak (Kältemittel-Anlage)", "cmr_kategorie": null}
+      ],
+      "wassernutzung": "Abwasserdirekteinleitung in Vorfluter (genehmigt)",
+      "abfallarten_wesentlich": ["Tierische Nebenprodukte (K3-Material)", "Verpackungsabfälle"],
+      "stoerfall_verordnung": null
+    },
+    {
+      "id": "K-004",
+      "name": "Bauunternehmen Klein GmbH",
+      "branche": "Bauwirtschaft (Hochbau)",
+      "mitarbeiter": 20,
+      "standort_bundesland": "Hessen",
+      "anlagen_4_bimschv": [],
+      "gefahrstoffe": [],
+      "wassernutzung": null,
+      "abfallarten_wesentlich": ["Bauabfall (mineralisch)", "Bodenaushub", "Bauholz"],
+      "stoerfall_verordnung": null
+    },
+    {
+      "id": "K-005",
+      "name": "ChemPro Industries GmbH",
+      "branche": "Chemische Industrie",
+      "mitarbeiter": 4500,
+      "standort_bundesland": "Hessen",
+      "anlagen_4_bimschv": [
+        {
+          "nummer": "4.1.1",
+          "bezeichnung": "Herstellung organischer Grundstoffe",
+          "kapazitaet_t_d": 500.0
+        },
+        {
+          "nummer": "9.1.1",
+          "bezeichnung": "Lager für Gefahrstoffe",
+          "kapazitaet_t": 5000.0
+        }
+      ],
+      "gefahrstoffe": [
+        {"name": "Methanol", "cmr_kategorie": null},
+        {"name": "Toluol", "cmr_kategorie": "2"},
+        {"name": "verschiedene CMR-Stoffe (Kategorie 1A und 1B)", "cmr_kategorie": "1A/1B"}
+      ],
+      "wassernutzung": "Grundwasser-Entnahme + Direkteinleitung von Prozessabwasser",
+      "abfallarten_wesentlich": ["Lösemittelabfälle", "Reaktionsrückstände", "Filterkuchen"],
+      "stoerfall_verordnung": "obere Klasse"
+    },
+    {
+      "id": "K-006",
+      "name": "Stadtwerke Bernau Wasserversorgung",
+      "branche": "Wasserversorgung",
+      "mitarbeiter": 80,
+      "standort_bundesland": "Brandenburg",
+      "anlagen_4_bimschv": [],
+      "gefahrstoffe": [
+        {"name": "Chlor (Trinkwasseraufbereitung)", "cmr_kategorie": null}
+      ],
+      "wassernutzung": "Trinkwasser-Förderung aus 4 Brunnen, Wasserschutzgebiete Zone II + III",
+      "abfallarten_wesentlich": ["Filterschlamm", "Aufbereitungsrückstände"],
+      "stoerfall_verordnung": null
+    }
+  ]
+}

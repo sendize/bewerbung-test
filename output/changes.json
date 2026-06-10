@@ -1,0 +1,42 @@
+[
+  {
+    "type": "MODIFIED",
+    "law": "BImSchG",
+    "paragraph": "§5",
+    "title": "Pflichten der Betreiber genehmigungsbedürftiger Anlagen",
+    "substantive": true,
+    "reason": "Schwellenwert für genehmigungsbedürftige Anlagen Nr. 3.1.1 (Eisenmetallgießerei) von 10 t/h auf 5 t/h gesenkt"
+  },
+  {
+    "type": "MODIFIED",
+    "law": "KrWG",
+    "paragraph": "§7",
+    "title": "Pflichten der Erzeuger und Besitzer von Abfällen",
+    "substantive": false,
+    "reason": "Sprachliche Klarstellung in Absatz 2 (Tippfehler-Korrektur)"
+  },
+  {
+    "type": "REPEALED",
+    "law": "WHG",
+    "paragraph": "§3",
+    "title": "Begriffsbestimmungen",
+    "reason": "Status changed to 'aufgehoben' (repealed). Aufgehoben durch Artikel 4 des Gesetzes vom 18.02.2025"
+  },
+  {
+    "type": "RENUMBERED",
+    "law": "BImSchG",
+    "old_paragraph": "§15",
+    "new_paragraph": "§15a",
+    "title": "Anzeige bei Änderungen",
+    "content_changed": true,
+    "substantive": true,
+    "reason": "Aus §15 umnummeriert nach Einfügung eines neuen §15 (Datenübermittlung an Behörden) durch Änderungsgesetz vom 12.01.2025"
+  },
+  {
+    "type": "NEW",
+    "law": "GefStoffV",
+    "paragraph": "§8a",
+    "title": "Schutzmaßnahmen bei Tätigkeiten mit krebserzeugenden Stoffen der Kategorie 1A oder 1B",
+    "reason": "Neuer Paragraph zur Umsetzung EU-Richtlinie 2024/869"
+  }
+]
